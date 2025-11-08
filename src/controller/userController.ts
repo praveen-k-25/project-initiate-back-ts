@@ -1,50 +1,51 @@
-const { ObjectId, ReturnDocument } = require("mongodb");
-const { asyncHandler } = require("../middleware/ErrorHandler");
-const { getCollection } = require("../models/dbModel");
-const { registerModel } = require("../models/userModel");
-const { VerifyPassword, hashPassword } = require("../utils/Hashing");
-const { accessToken, refreshToken } = require("../utils/TokenHandler");
-const {
-  verifyRegisterOtp,
+import type { Request, Response } from "express";
+import {
   verifyForgotPasswordOtp,
-} = require("./mailController");
+  verifyRegisterOtp,
+} from "./mailController.js";
+import { registerModel } from "../models/userModel.js";
+import { ObjectId } from "mongodb";
+import { asyncHandler } from "../middleware/ErrorHandler.js";
+import { getCollection } from "../models/dbModel.js";
+import { hashPassword, VerifyPassword } from "../utils/Hashing.js";
+import { accessToken } from "../utils/TokenHandler.js";
+
+const liveDatabase = getCollection(process?.env?.["DATA_COLLECTION"] || "");
 
 // register user
-const registerUser = async (req, res) => {
+const registerUser = async (req: Request, res: Response) => {
   const { username, email, password, otp } = req.body;
   const verified = await verifyRegisterOtp({ email, otp });
 
   if (!verified) {
     let error = new Error();
-    error.status = 400;
+    //error.status = 400;
     error.cause = "otp";
     error.message = "Invalid OTP";
     throw error;
   }
 
   const hashedPassword = await hashPassword(password);
-  await registerModel(
-    process.env.USER_COLLECTION,
-    {
-      username,
-      email,
-      password: hashedPassword,
-    },
-    {}
-  );
-
-  let masterID = await getCollection(process.env.USER_COLLECTION).findOne({
-    email: process.env.MASTER_EMAIL,
+  await registerModel(process?.env?.["USER_COLLECTION"] || "", {
+    username,
+    email,
+    password: hashedPassword,
   });
 
-  const user = await getCollection(process.env.USER_COLLECTION).findOne({
+  let masterID = await liveDatabase.findOne({
+    email: process?.env?.["MASTER_EMAIL"],
+  });
+
+  const user = await liveDatabase.findOne({
     email,
   });
 
   if (
-    !masterID?.vehicles?.some((id) => id.toString() === user._id.toString())
+    !masterID?.vehicles?.some(
+      (id: number) => id.toString() === user._id.toString()
+    )
   ) {
-    await getCollection(process.env.USER_COLLECTION).updateOne(
+    await liveDatabase.updateOne(
       { _id: masterID?._id },
       { $push: { vehicles: user._id } }
     );
@@ -55,29 +56,32 @@ const registerUser = async (req, res) => {
 
 // login user
 
-const loginUser = asyncHandler(async (req, res) => {
+const loginUser = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
-  let user = await getCollection(process.env.USER_COLLECTION).findOne({
+  let user = await liveDatabase.findOne({
     email,
   });
   if (!user) {
     let error = new Error();
-    error.status = 400;
+    //error.status = 400;
     error.cause = "email";
     error.message = "User not found";
     throw error;
   }
+
   const isMatch = await VerifyPassword(user.password, password);
   if (!isMatch) {
     let error = new Error();
-    error.status = 400;
+    //error.status = 400;
     error.cause = "password";
     error.message = "Invalid Password";
     throw error;
   }
 
   if (!user.vehicles) {
-    user = await getCollection(process.env.USER_COLLECTION).findOneAndUpdate(
+    user = await getCollection(
+      process?.env?.["USER_COLLECTION"] || ""
+    ).findOneAndUpdate(
       { _id: new ObjectId(user._id) },
       {
         $set: {
@@ -94,7 +98,7 @@ const loginUser = asyncHandler(async (req, res) => {
   res.cookie("accessId", accessToken(user), {
     httpOnly: true,
     secure: true,
-    sameSite: "None",
+    sameSite: "none",
   });
 
   /*  res.cookie("refreshId", refreshToken(user), {
@@ -117,20 +121,20 @@ const loginUser = asyncHandler(async (req, res) => {
 
 // forgot password
 
-const forgotPassword = async (req, res) => {
+const forgotPassword = async (req: Request, res: Response) => {
   const { email, newPassword, otp } = req.body;
   const verify = await verifyForgotPasswordOtp({ email, otp });
 
   if (!verify) {
     let error = new Error();
-    error.status = 400;
+    //error.status = 400;
     error.cause = "otp";
     error.message = "Invalid OTP";
     throw error;
   }
 
   const hashedPassword = await hashPassword(newPassword);
-  await getCollection(process.env.USER_COLLECTION).updateOne(
+  await liveDatabase.updateOne(
     { email },
     { $set: { password: hashedPassword } }
   );

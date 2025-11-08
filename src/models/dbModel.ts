@@ -1,7 +1,7 @@
-const { getDB } = require("../database/db");
+import { getDB } from "../database/db.js";
 
-const getCollection = (collection) => {
+const getCollection = (collection: string) => {
   return getDB().collection(collection);
 };
 
-module.exports = { getCollection };
+export { getCollection };

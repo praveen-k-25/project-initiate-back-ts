@@ -1,12 +1,20 @@
-const Validation = (schema) => async (req, res, next) => {
-  try {
-    await schema.validate(req.body, {abortEarly: false});
-    next();
-  } catch (error) {
-    return res
-      .status(400)
-      .json({success: false, message: error.message, errors: error.errors});
-  }
-};
+import type { Request, Response, NextFunction } from "express";
+import type { AnySchema, ValidationError } from "yup";
 
-module.exports = Validation;
+const Validation =
+  (schema: AnySchema) =>
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      await schema.validate(req.body, { abortEarly: false });
+      next();
+    } catch (err) {
+      const error = err as ValidationError;
+      res.status(400).json({
+        success: false,
+        message: error.message,
+        errors: error.errors, // array of validation messages
+      });
+    }
+  };
+
+export { Validation };

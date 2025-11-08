@@ -1,11 +1,14 @@
-const jwt = require("jsonwebtoken");
+import { sign, verify } from "jsonwebtoken";
 
-const accessToken = (user) => {
-  const accessToken = jwt.sign(
+const accessTokenValue = process?.env?.["ACCESS_TOKEN_SECRET"] || "";
+const refreshTokenValue = process?.env?.["REFRESH_TOKEN_SECRET"] || "";
+
+const accessToken = (user: any) => {
+  const accessToken = sign(
     {
       id: user._id,
     },
-    process.env.ACCESS_TOKEN_SECRET,
+    accessTokenValue,
     {
       expiresIn: "7d",
     }
@@ -13,12 +16,12 @@ const accessToken = (user) => {
   return accessToken;
 };
 
-const refreshToken = (user) => {
-  const refreshToken = jwt.sign(
+const refreshToken = (user: any) => {
+  const refreshToken = sign(
     {
       id: user._id,
     },
-    process.env.REFRESH_TOKEN_SECRET,
+    refreshTokenValue,
     {
       expiresIn: "30d",
     }
@@ -26,11 +29,11 @@ const refreshToken = (user) => {
   return refreshToken;
 };
 
-const VerifyAccessToken = (token) => {
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+const VerifyAccessToken = (token: string) => {
+  verify(token, accessTokenValue, (err: unknown, decoded: any) => {
     if (err) {
       let error = new Error();
-      error.status = 401;
+      // error.status = 401;
       error.message = "Invalid Access Token";
       error.cause = "accessToken";
       throw error;
@@ -40,13 +43,18 @@ const VerifyAccessToken = (token) => {
   });
 };
 
-const VerifyRefreshToken = (token) => {
-  jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
+const VerifyRefreshToken = (token: string) => {
+  verify(token, refreshTokenValue, (err: unknown, decoded: any) => {
+    if (err) {
+      let error = new Error();
+      // error.status = 401;
+      error.message = "Invalid Refresh Token";
+      error.cause = "refreshToken";
+      throw error;
+    }
+    console.log(decoded);
+    return decoded;
+  });
 };
 
-module.exports = {
-  accessToken,
-  refreshToken,
-  VerifyAccessToken,
-  VerifyRefreshToken,
-};
+export { accessToken, refreshToken, VerifyAccessToken, VerifyRefreshToken };

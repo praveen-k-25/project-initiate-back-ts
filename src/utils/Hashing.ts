@@ -1,26 +1,24 @@
-const argon = require("argon2");
+import argon from "argon2";
 
-const hashPassword = async (password) => {
+export const hashPassword = async (password: string) => {
   try {
     const hash = await argon.hash(password);
     return hash;
   } catch (error) {
     let err = new Error();
-    err.status = 500;
+    //err.status = 500;
     err.message = "Hashing Error";
     throw err;
   }
 };
 
-const VerifyPassword = async (hash, password) => {
+export const VerifyPassword = async (hash: string, password: string) => {
   try {
     return await argon.verify(hash, password);
   } catch (error) {
     let err = new Error();
-    err.status = 500;
+    //err.status = 500;
     err.message = "Veriy Password Error";
     throw err;
   }
 };
-
-module.exports = {hashPassword, VerifyPassword};

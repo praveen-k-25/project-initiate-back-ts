@@ -1,12 +1,14 @@
 // src/server.js
 import "dotenv/config"; // automatically runs dotenv.config()
+import type { Request, Response } from "express";
 import express from "express";
 import cors from "cors";
 import { connectDB } from "./database/db.js";
 import { globalErrorHandler } from "./middleware/ErrorHandler.js";
-import userRouter from "./routes/userRoutes.js";
-import dataRouter from "./routes/dataRouter.js";
-import keepServerAwake from "./utils/keepserverAwake.js";
+import ensureIndexes from "./utils/indexing.js";
+import { userRouter } from "./routes/userRoutes.js";
+import { dataRouter } from "./routes/dataRouter.js";
+import { keepServerAwake } from "./utils/keepserverAwake.js";
 
 const app = express();
 // connect to database
@@ -35,9 +37,10 @@ app.use("/user", userRouter);
 app.use("/data", dataRouter);
 
 // self-ping
-app.get("/keep-alive", (req, res) =>
-  res.status(200).json({ success: true, status: 200 })
-);
+app.get("/keep-alive", (req: Request, res: Response) => {
+  const {} = req.body;
+  res.status(200).json({ success: true, status: 200 });
+});
 
 // captures all errors
 app.use(globalErrorHandler);

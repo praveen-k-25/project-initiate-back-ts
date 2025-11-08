@@ -1,11 +1,7 @@
-const {getDB} = require("./db");
+import { getDB } from "./db.js";
 
-const registerCollection = async () => {
+export const registerCollection = async () => {
   const db = getDB();
   const collection = await db.collection("users");
   return collection;
-};
-
-module.exports = {
-  registerCollection,
 };

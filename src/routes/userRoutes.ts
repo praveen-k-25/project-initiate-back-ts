@@ -1,24 +1,22 @@
 import express from "express";
-
-const {
-  registerUser,
-  loginUser,
-  forgotPassword,
-} = require("../controller/userController");
-
-const Validation = require("../middleware/ValidationHandler");
-const {
-  registerSchema,
+import { Validation } from "../middleware/ValidationHandler.js";
+import {
   loginSchema,
-  verifyRegisterOtpSchema,
   otpSchema,
+  registerSchema,
   verifyForgotPasswordOtpSchema,
-} = require("../utils/authValidationSchema");
-const {
-  sendRegisterOtp,
+} from "../utils/authValidationSchema.js";
+import {
+  forgotPassword,
+  loginUser,
+  registerUser,
+} from "../controller/userController.js";
+import {
   forgotPasswordOtp,
-} = require("../controller/mailController");
-const userRouter = express.Router();
+  sendRegisterOtp,
+} from "../controller/mailController.js";
+
+export const userRouter = express.Router();
 
 userRouter.post("/login", Validation(loginSchema), loginUser);
 userRouter.post("/registerOtp", Validation(otpSchema), sendRegisterOtp);
@@ -29,5 +27,3 @@ userRouter.post(
   Validation(verifyForgotPasswordOtpSchema),
   forgotPassword
 );
-
-module.exports = userRouter;

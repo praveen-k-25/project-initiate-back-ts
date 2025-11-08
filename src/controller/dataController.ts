@@ -1,69 +1,66 @@
-const { ObjectId } = require("mongodb");
-const {
-  movingReportData,
-  playbackReportData,
-} = require("../functions/movingData");
-const { getCollection } = require("../models/dbModel");
+import { ObjectId } from "mongodb";
+import type { Request, Response } from "express";
+import { movingReportData, playbackData } from "../functions/movingData.js";
+import { getCollection } from "../models/dbModel.js";
 
-const movingReport = async (req, res) => {
-  const { startDate, endDate } = req.body;
-  console.log(req.headers);
-  await getCollection(process.env.DATA_COLLECTION).createIndex({
-    status: 1,
-    timestamp: 1,
-  });
+const liveDatabase = getCollection(process?.env?.["DATA_COLLECTION"] || "");
+const userDatabse = getCollection(process?.env?.["USER_COLLECTION"] || "");
 
-  const rawData = await getCollection(process.env.DATA_COLLECTION)
+const reportData = async (req: Request, res: Response) => {
+  const { user, startDate, endDate, status } = req.body;
+
+  const rawData = await liveDatabase
     .find({
+      user: user,
       timestamp: {
         $gte: startDate,
         $lt: endDate,
       },
-      status: 1,
+      status: status,
     })
-    .project({ user: 1, lat: 1, lng: 1, timestamp: 1, speed: 1 })
+    .project({ lat: 1, lng: 1, timestamp: 1, speed: 1 })
     .limit(10)
     .toArray();
 
-  //const resultData = movingReportData(rawData);
-  res.status(200).json({
-    success: true,
-    data: rawData,
-  });
-};
-
-const playbackReport = async (req, res) => {
-  const { startDate, endDate } = req.body;
-  await getCollection(process.env.DATA_COLLECTION).createIndex({
-    user: 1,
-    username: 1,
-  });
-  const rawData = await getCollection(process.env.DATA_COLLECTION)
-    .find({
-      timestamp: {
-        $gte: new Date(startDate).getTime(),
-        $lt: new Date(endDate).getTime(),
-      },
-    })
-    .toArray();
-
-  const resultData = playbackReportData(rawData);
+  const resultData = movingReportData(rawData);
   res.status(200).json({
     success: true,
     data: resultData,
   });
 };
 
-const dashboardVehicles = async (req, res) => {
+const playbackReport = async (req: Request, res: Response) => {
+  const { user, startDate, endDate } = req.body;
+
+  const rawData = await liveDatabase
+    .find({
+      user: user,
+      timestamp: {
+        $gte: new Date(startDate).getTime(),
+        $lt: new Date(endDate).getTime(),
+      },
+      status: 1,
+    })
+    .project({ lat: 1, lng: 1, timestamp: 1, speed: 1 })
+    .toArray();
+
+  const resultData = playbackData(rawData);
+  res.status(200).json({
+    success: true,
+    data: resultData,
+  });
+};
+
+const dashboardVehicles = async (req: Request, res: Response) => {
   const { user } = req.body;
 
-  const vehicleList = await getCollection(process.env.USER_COLLECTION).findOne({
+  const vehicleList = await userDatabse.findOne({
     _id: new ObjectId(user),
   });
 
   let result = [];
   for (let vehicle of vehicleList.vehicles) {
-    let data = await getCollection(process.env.DATA_COLLECTION).findOne(
+    let data = await liveDatabase.findOne(
       {
         user: vehicle.toString(),
       },
@@ -78,4 +75,4 @@ const dashboardVehicles = async (req, res) => {
   });
 };
 
-module.exports = { movingReport, playbackReport, dashboardVehicles };
+export { reportData, playbackReport, dashboardVehicles };

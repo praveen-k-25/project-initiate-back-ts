@@ -43,7 +43,7 @@ export const verifyRegisterOtpSchema = yup.object().shape({
   otp: yup.number().required(),
 });
 
-const verifyForgotPasswordOtpSchema = yup.object().shape({
+export const verifyForgotPasswordOtpSchema = yup.object().shape({
   email: yup
     .string()
     .matches(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "invalid email address")

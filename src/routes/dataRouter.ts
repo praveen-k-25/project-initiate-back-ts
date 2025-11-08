@@ -1,13 +1,13 @@
-const {
-  movingReport,
-  playbackReport,
+import express from "express";
+import {
   dashboardVehicles,
-} = require("../controller/dataController");
+  playbackReport,
+  reportData,
+} from "../controller/dataController.js";
 
-const dataRouter = require("express").Router();
+export const dataRouter = express.Router();
 
-dataRouter.post("/moving", movingReport);
+dataRouter.post("/moving", reportData);
+dataRouter.post("/idle", reportData);
 dataRouter.post("/playback", playbackReport);
 dataRouter.post("/dashboardVehicle", dashboardVehicles);
-
-module.exports = dataRouter;

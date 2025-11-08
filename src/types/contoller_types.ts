@@ -1,4 +1,4 @@
-export interface movingData {
+export interface reportData {
   user: string;
   lat: number;
   lng: number;

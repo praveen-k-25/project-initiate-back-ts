@@ -1,9 +1,9 @@
-const { transporter } = require("../configs/mailConfig");
+import { transporter } from "../configs/mailConfig.js";
 
-const sendOtpMail = async (email, otp) => {
+const sendOtpMail = async (email: string, otp: number) => {
   try {
-    const response = await transporter.mailer.sendMail({
-      from: `<${process.env.EMAIL_USER}>`,
+    await transporter.sendMail({
+      from: `<${process?.env?.["EMAIL_USER"]}>`,
       to: email,
       subject: "OTP Verification Code",
       html: ` <div style="font-family:Arial,sans-serif; line-height:1.5; color:#333;">
@@ -31,10 +31,10 @@ const sendOtpMail = async (email, otp) => {
   return true;
 };
 
-const sendForgotPasswordOtp = async (email, otp) => {
+const sendForgotPasswordOtp = async (email: string, otp: number) => {
   try {
-    await transporter.mailer.sendMail({
-      from: `<${process.env.EMAIL_USER}>`,
+    await transporter.sendMail({
+      from: `<${process?.env?.["EMAIL_USER"]}>`,
       to: email,
       subject: `Password Reset OTP`,
       html: ` <div style="font-family:Arial,sans-serif; line-height:1.5; color:#333;">
@@ -58,4 +58,4 @@ const sendForgotPasswordOtp = async (email, otp) => {
   return true;
 };
 
-module.exports = { sendOtpMail, sendForgotPasswordOtp };
+export { sendOtpMail, sendForgotPasswordOtp };

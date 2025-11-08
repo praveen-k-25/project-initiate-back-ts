@@ -1,18 +1,20 @@
-const { getCollection } = require("../models/dbModel");
-const { sendOtpMail, sendForgotPasswordOtp } = require("../utils/mailers");
+import type { Request, Response } from "express";
+import { getCollection } from "../models/dbModel.js";
+import { sendForgotPasswordOtp, sendOtpMail } from "../utils/mailers.js";
 
+const userDatabse = getCollection(process?.env?.["USER_COLLECTION"] || "");
 const otpStore = new Map();
 const forgotPasswordOtpStore = new Map();
 
-const sendRegisterOtp = async (req, res) => {
+const sendRegisterOtp = async (req: Request, res: Response) => {
   const { email } = req.body;
-  const user = await getCollection(process.env.USER_COLLECTION).findOne({
+  const user = await userDatabse.findOne({
     email,
   });
 
   if (user) {
     let error = new Error();
-    error.status = 400;
+    //error.status = 400;
     error.cause = "email";
     error.message = "User email already exists";
     throw error;
@@ -22,7 +24,7 @@ const sendRegisterOtp = async (req, res) => {
   const isMailSent = await sendOtpMail(email, otp);
   if (!isMailSent) {
     let error = new Error();
-    error.status = 500;
+    //error.status = 500;
     error.message = "OTP not sent";
     throw error;
   }
@@ -30,12 +32,9 @@ const sendRegisterOtp = async (req, res) => {
   return res.status(200).json({ success: true, message: "OTP sent" });
 };
 
-const verifyRegisterOtp = async (data) => {
+const verifyRegisterOtp = async (data: any) => {
   const { email, otp } = data;
-  console.log("email : ", email, "OTP : ", otp);
   const storedOtp = otpStore.get(email);
-  console.log(storedOtp, " OTP : ", otp);
-  console.log("otpStore : ", otpStore);
   if (!storedOtp) {
     return false;
   }
@@ -49,16 +48,15 @@ const verifyRegisterOtp = async (data) => {
   return true;
 };
 
-const forgotPasswordOtp = async (req, res) => {
+const forgotPasswordOtp = async (req: Request, res: Response) => {
   const { email } = req.body;
-  const user = await getCollection(process.env.USER_COLLECTION).findOne({
+  const user = await userDatabse.findOne({
     email,
   });
-  console.log(user);
 
   if (!user) {
     let error = new Error();
-    error.status = 400;
+    //error.status = 400;
     error.cause = "email";
     error.message = "invalid email";
     throw error;
@@ -68,7 +66,7 @@ const forgotPasswordOtp = async (req, res) => {
   const isMailSent = await sendForgotPasswordOtp(email, otp);
   if (!isMailSent) {
     let error = new Error();
-    error.status = 500;
+    //error.status = 500;
     error.message = "OTP not sent";
     throw error;
   }
@@ -79,7 +77,7 @@ const forgotPasswordOtp = async (req, res) => {
   return res.status(200).json({ success: true, message: "OTP sent" });
 };
 
-const verifyForgotPasswordOtp = async (data) => {
+const verifyForgotPasswordOtp = async (data: any) => {
   const { email, otp } = data;
   const storedOtp = forgotPasswordOtpStore.get(email);
   if (!storedOtp) {
@@ -95,7 +93,7 @@ const verifyForgotPasswordOtp = async (data) => {
   return true;
 };
 
-module.exports = {
+export {
   sendRegisterOtp,
   verifyRegisterOtp,
   forgotPasswordOtp,
