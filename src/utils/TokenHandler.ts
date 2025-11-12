@@ -1,4 +1,5 @@
-import { sign, verify } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
+const { sign, verify } = jwt;
 
 const accessTokenValue = process?.env?.["ACCESS_TOKEN_SECRET"] || "";
 const refreshTokenValue = process?.env?.["REFRESH_TOKEN_SECRET"] || "";

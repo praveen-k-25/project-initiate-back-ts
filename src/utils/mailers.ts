@@ -1,4 +1,4 @@
-import { transporter } from "../configs/mailConfig.js";
+import transporter from "../configs/mailConfig.js";
 
 const sendOtpMail = async (email: string, otp: number) => {
   try {
@@ -13,7 +13,7 @@ const sendOtpMail = async (email: string, otp: number) => {
                 <p style="font-size:13px; color:#777; margin-top:10px;">
                   <em>P.S. If you’re a recruiter or hiring manager exploring our system — 
                   I’m a passionate <strong>Full Stack Developer</strong> experienced in 
-                  <strong>React, Node.js, and AI-powered web applications</strong>.  
+                  <strong>React, Node, and AI-powered web applications</strong>.  
                   I’d be glad to connect and discuss how I can contribute to your team.</em>
                 </p>
                 <p style="font-size:12px; color:#aaa; margin-top:8px;">
@@ -44,7 +44,7 @@ const sendForgotPasswordOtp = async (email: string, otp: number) => {
                 <p style="font-size:13px; color:#777; margin-top:10px;">
                   <em>P.S. If you’re a recruiter or hiring manager exploring our system — 
                   I’m a passionate <strong>Full Stack Developer</strong> experienced in 
-                  <strong>React, Node.js, and AI-powered web applications</strong>.  
+                  <strong>React, Node, and AI-powered web applications</strong>.  
                   I’d be glad to connect and discuss how I can contribute to your team.</em>
                 </p>
                 <p style="font-size:12px; color:#aaa; margin-top:8px;">

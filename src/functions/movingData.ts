@@ -1,4 +1,7 @@
-import type { reportData } from "../types/contoller_types.js";
+import {
+  PlaybackDataPoint,
+  ReportsDataPoint,
+} from "../types/controllerTypes.js";
 
 export function getDateTime(startDate: Date) {
   const year = startDate.getFullYear();
@@ -29,13 +32,13 @@ export function getTimeDifference(timestamp: number) {
   }:${seconds < 10 ? `0${seconds}` : seconds}`;
 }
 
-export function movingReportData(data: reportData[]) {
-  let previousData: reportData | null = null;
+export function movingReportData(data: ReportsDataPoint[]) {
+  let previousData: ReportsDataPoint | null = null;
   let currentData: any = null;
   let resultData: any[] = [];
   const difference = 5 * 60 * 1000;
 
-  data.forEach((item: reportData, index: number) => {
+  data.forEach((item: ReportsDataPoint, index: number) => {
     if (!currentData) {
       currentData.user = item.user;
       currentData.startTime = item.timestamp;
@@ -75,13 +78,13 @@ export function movingReportData(data: reportData[]) {
   return resultData;
 }
 
-export function idleReportData(data: reportData[]) {
-  let previousData: reportData | null = null;
+export function idleReportData(data: ReportsDataPoint[]) {
+  let previousData: ReportsDataPoint | null = null;
   let currentData: any = null;
   let resultData: any[] = [];
   const difference = 5 * 60 * 1000;
 
-  data.forEach((item: reportData, index: number) => {
+  data.forEach((item: ReportsDataPoint, index: number) => {
     if (!currentData) {
       currentData.user = item.user;
       currentData.startTime = item.timestamp;
@@ -121,13 +124,13 @@ export function idleReportData(data: reportData[]) {
   return resultData;
 }
 
-export function playbackData(data: any) {
-  let previousData: reportData;
+export function playbackData(data: PlaybackDataPoint[]) {
+  let previousData: PlaybackDataPoint;
   let currentData: any = null;
   let resultData: any[] = [];
   const difference = 5 * 60 * 1000;
 
-  data.forEach((item: reportData, index: number) => {
+  data.forEach((item: PlaybackDataPoint, index: number) => {
     if (!currentData) {
       currentData.startTime = item.timestamp;
       currentData.playback = [[item.lat, item.lng]];

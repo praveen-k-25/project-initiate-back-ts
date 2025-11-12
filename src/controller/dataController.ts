@@ -1,15 +1,21 @@
 import { ObjectId } from "mongodb";
 import type { Request, Response } from "express";
 import { movingReportData, playbackData } from "../functions/movingData.js";
-import { getCollection } from "../models/dbModel.js";
+import { getCollection } from "../database/collection.js";
+import {
+  UserData,
+  PlaybackDataPoint,
+  Reports,
+  ReportsDataPoint,
+} from "../types/controllerTypes.js";
 
-const liveDatabase = getCollection(process?.env?.["DATA_COLLECTION"] || "");
-const userDatabse = getCollection(process?.env?.["USER_COLLECTION"] || "");
+const dataCollection = process.env.DATA_COLLECTION;
+const userCollection = process.env.USER_COLLECTION;
 
 const reportData = async (req: Request, res: Response) => {
   const { user, startDate, endDate, status } = req.body;
 
-  const rawData = await liveDatabase
+  const rawData = await getCollection<Reports>(dataCollection!)
     .find({
       user: user,
       timestamp: {
@@ -18,7 +24,13 @@ const reportData = async (req: Request, res: Response) => {
       },
       status: status,
     })
-    .project({ lat: 1, lng: 1, timestamp: 1, speed: 1 })
+    .project<ReportsDataPoint>({
+      user: 1,
+      lat: 1,
+      lng: 1,
+      timestamp: 1,
+      speed: 1,
+    })
     .limit(10)
     .toArray();
 
@@ -32,7 +44,7 @@ const reportData = async (req: Request, res: Response) => {
 const playbackReport = async (req: Request, res: Response) => {
   const { user, startDate, endDate } = req.body;
 
-  const rawData = await liveDatabase
+  const rawData = await getCollection<Reports>(dataCollection!)
     .find({
       user: user,
       timestamp: {
@@ -41,7 +53,7 @@ const playbackReport = async (req: Request, res: Response) => {
       },
       status: 1,
     })
-    .project({ lat: 1, lng: 1, timestamp: 1, speed: 1 })
+    .project<PlaybackDataPoint>({ lat: 1, lng: 1, timestamp: 1, speed: 1 })
     .toArray();
 
   const resultData = playbackData(rawData);
@@ -54,19 +66,23 @@ const playbackReport = async (req: Request, res: Response) => {
 const dashboardVehicles = async (req: Request, res: Response) => {
   const { user } = req.body;
 
-  const vehicleList = await userDatabse.findOne({
-    _id: new ObjectId(user),
-  });
+  const vehicleList = await getCollection<UserData>(userCollection!).findOne(
+    { _id: new ObjectId(user) },
+    { projection: { vehicles: 1 } }
+  );
 
   let result = [];
-  for (let vehicle of vehicleList.vehicles) {
-    let data = await liveDatabase.findOne(
-      {
-        user: vehicle.toString(),
-      },
-      { sort: { timestamp: -1 } }
-    );
-    data && result.push(data);
+
+  if (vehicleList?.vehicles) {
+    for (let vehicle of vehicleList?.vehicles) {
+      let data = await getCollection(dataCollection!).findOne(
+        {
+          user: vehicle.toString(),
+        },
+        { sort: { timestamp: -1 } }
+      );
+      data && result.push(data);
+    }
   }
 
   res.status(200).json({

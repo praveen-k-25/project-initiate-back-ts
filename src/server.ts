@@ -1,20 +1,21 @@
-// src/server.js
-import "dotenv/config"; // automatically runs dotenv.config()
-import type { Request, Response } from "express";
-import express from "express";
+import "dotenv/config";
+import express, { Request, Response } from "express";
 import cors from "cors";
-import { connectDB } from "./database/db.js";
-import { globalErrorHandler } from "./middleware/ErrorHandler.js";
-import ensureIndexes from "./utils/indexing.js";
+import { connectDB } from "./database/database.js";
+import ensureIndex from "./utils/indexing.js";
 import { userRouter } from "./routes/userRoutes.js";
 import { dataRouter } from "./routes/dataRouter.js";
+import { globalErrorHandler } from "./middleware/ErrorHandler.js";
 import { keepServerAwake } from "./utils/keepserverAwake.js";
 
 const app = express();
-// connect to database
-connectDB();
+app.use(express.json());
 
-// middleware
+// Connect to Database
+await connectDB();
+await ensureIndex();
+
+// CORS Configuration
 app.use(
   cors({
     origin: [
@@ -27,10 +28,6 @@ app.use(
     credentials: true,
   })
 );
-
-app.use(express.json());
-
-await ensureIndexes();
 
 // routes
 app.use("/user", userRouter);
@@ -50,8 +47,7 @@ process.on("unhandledRejection", (reason, p) => {
   console.log("Unhandled Rejection at: Promise", p, "reason:", reason);
 });
 
-// server listening
-app.listen(10000, () => {
-  console.log(`Server running on port ${process.env["PORT"]}`);
+app.listen(process.env.PORT || 4000, () => {
+  console.log(`Server is running on port ${process.env.PORT}`);
   keepServerAwake();
 });

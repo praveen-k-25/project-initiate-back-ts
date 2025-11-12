@@ -3,14 +3,12 @@ import {
   verifyForgotPasswordOtp,
   verifyRegisterOtp,
 } from "./mailController.js";
-import { registerModel } from "../models/userModel.js";
 import { ObjectId } from "mongodb";
 import { asyncHandler } from "../middleware/ErrorHandler.js";
-import { getCollection } from "../models/dbModel.js";
 import { hashPassword, VerifyPassword } from "../utils/Hashing.js";
-import { accessToken } from "../utils/TokenHandler.js";
-
-const liveDatabase = getCollection(process?.env?.["DATA_COLLECTION"] || "");
+import { accessToken, refreshToken } from "../utils/TokenHandler.js";
+import { getCollection } from "../database/collection.js";
+import { UserData } from "../types/controllerTypes.js";
 
 // register user
 const registerUser = async (req: Request, res: Response) => {
@@ -26,28 +24,40 @@ const registerUser = async (req: Request, res: Response) => {
   }
 
   const hashedPassword = await hashPassword(password);
-  await registerModel(process?.env?.["USER_COLLECTION"] || "", {
+  await getCollection(process.env.USER_COLLECTION!).insertOne({
     username,
     email,
     password: hashedPassword,
   });
 
-  let masterID = await liveDatabase.findOne({
-    email: process?.env?.["MASTER_EMAIL"],
+  let masterID = await getCollection(process.env.USER_COLLECTION!).findOne({
+    email: process.env.MASTER_EMAIL!,
   });
 
-  const user = await liveDatabase.findOne({
+  const user = await getCollection(process.env.USER_COLLECTION!).findOne({
     email,
   });
 
   if (
     !masterID?.vehicles?.some(
-      (id: number) => id.toString() === user._id.toString()
+      (id: number) => id.toString() === user?._id.toString()
     )
   ) {
-    await liveDatabase.updateOne(
+    let userCollection = getCollection<UserData>(process.env.USER_COLLECTION!);
+    await userCollection.updateOne(
       { _id: masterID?._id },
-      { $push: { vehicles: user._id } }
+      { $push: { vehicles: user?._id } }
+    );
+  }
+
+  if (
+    !user?.vehicles?.some(
+      (id: number) => id.toString() === user?._id.toString()
+    )
+  ) {
+    await getCollection<UserData>(process.env.USER_COLLECTION!).updateOne(
+      { _id: user?._id },
+      { $push: { vehicles: user?._id } }
     );
   }
 
@@ -58,7 +68,7 @@ const registerUser = async (req: Request, res: Response) => {
 
 const loginUser = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
-  let user = await liveDatabase.findOne({
+  let user = await getCollection(process.env.USER_COLLECTION!).findOne({
     email,
   });
   if (!user) {
@@ -79,9 +89,7 @@ const loginUser = asyncHandler(async (req: Request, res: Response) => {
   }
 
   if (!user.vehicles) {
-    user = await getCollection(
-      process?.env?.["USER_COLLECTION"] || ""
-    ).findOneAndUpdate(
+    user = await getCollection(process.env.USER_COLLECTION!).findOneAndUpdate(
       { _id: new ObjectId(user._id) },
       {
         $set: {
@@ -101,20 +109,20 @@ const loginUser = asyncHandler(async (req: Request, res: Response) => {
     sameSite: "none",
   });
 
-  /*  res.cookie("refreshId", refreshToken(user), {
+  res.cookie("refreshId", refreshToken(user), {
     httpOnly: true,
     secure: true,
-    sameSite: "None",
-  }); */
+    sameSite: "none",
+  });
 
   res.status(200).json({
     success: true,
     message: "User logged in Successfully",
     data: {
-      username: user.username,
-      email: user.email,
-      id: user._id,
-      vehicles: user.vehicles || [],
+      username: user?.username,
+      email: user?.email,
+      id: user?._id,
+      vehicles: user?.vehicles || [],
     },
   });
 });
@@ -134,7 +142,7 @@ const forgotPassword = async (req: Request, res: Response) => {
   }
 
   const hashedPassword = await hashPassword(newPassword);
-  await liveDatabase.updateOne(
+  await getCollection(process.env.USER_COLLECTION!).updateOne(
     { email },
     { $set: { password: hashedPassword } }
   );

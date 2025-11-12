@@ -1,14 +1,13 @@
 import type { Request, Response } from "express";
-import { getCollection } from "../models/dbModel.js";
 import { sendForgotPasswordOtp, sendOtpMail } from "../utils/mailers.js";
+import { getCollection } from "../database/collection.js";
 
-const userDatabse = getCollection(process?.env?.["USER_COLLECTION"] || "");
 const otpStore = new Map();
 const forgotPasswordOtpStore = new Map();
 
 const sendRegisterOtp = async (req: Request, res: Response) => {
   const { email } = req.body;
-  const user = await userDatabse.findOne({
+  const user = await getCollection(process.env.USER_COLLECTION!).findOne({
     email,
   });
 
@@ -50,7 +49,7 @@ const verifyRegisterOtp = async (data: any) => {
 
 const forgotPasswordOtp = async (req: Request, res: Response) => {
   const { email } = req.body;
-  const user = await userDatabse.findOne({
+  const user = await getCollection(process.env.USER_COLLECTION!).findOne({
     email,
   });
 
