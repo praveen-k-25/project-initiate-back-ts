@@ -11,13 +11,11 @@ export function getDateTime(startDate: Date) {
   const minutes = startDate.getMinutes();
   const seconds = startDate.getSeconds();
 
-  return `${startDate.getFullYear()}-${
-    year + 1 < 10 ? `0${year + 1}` : year + 1
-  }-${month < 10 ? `0${month}` : month}-${date < 10 ? `0${date}` : date} ${
-    hours < 10 ? `0${hours}` : hours
-  }:${minutes < 10 ? `0${minutes}` : minutes}:${
-    seconds < 10 ? `0${seconds}` : seconds
-  }`;
+  return `${startDate.getFullYear()}-${month < 10 ? `0${month}` : month}-${
+    date < 10 ? `0${date}` : date
+  } ${hours < 10 ? `0${hours}` : hours}:${
+    minutes < 10 ? `0${minutes}` : minutes
+  }:${seconds < 10 ? `0${seconds}` : seconds}`;
 }
 
 export function getTimeDifference(timestamp: number) {
@@ -40,18 +38,20 @@ export function movingReportData(data: ReportsDataPoint[]) {
 
   data.forEach((item: ReportsDataPoint, index: number) => {
     if (!currentData) {
+      currentData = {};
       currentData.user = item.user;
       currentData.startTime = item.timestamp;
       previousData = item;
       return;
     }
+
     if (!previousData) return;
 
     if (
       item.timestamp - previousData.timestamp >= difference ||
       index === data.length - 1
     ) {
-      if (currentData.endDate) {
+      if (currentData.endTime) {
         currentData.duration = getTimeDifference(
           currentData.endTime - currentData.startTime
         );
@@ -61,15 +61,14 @@ export function movingReportData(data: ReportsDataPoint[]) {
         delete currentData.startTime;
         delete currentData.endTime;
         resultData.push(currentData);
-        currentData = {};
+        currentData = null;
       } else {
-        Object.keys(currentData).forEach((key) => delete currentData[key]);
-        currentData = {};
+        currentData = null;
       }
       return;
     }
 
-    if (item.timestamp - previousData.timestamp > 60 * 1000) {
+    if (item.timestamp - previousData.timestamp > 1000) {
       previousData = item;
       currentData.endTime = item.timestamp;
     }
@@ -97,7 +96,7 @@ export function idleReportData(data: ReportsDataPoint[]) {
       item.timestamp - previousData.timestamp >= difference ||
       index === data.length - 1
     ) {
-      if (currentData.endDate) {
+      if (currentData.endTime) {
         currentData.duration = getTimeDifference(
           currentData.endTime - currentData.startTime
         );
@@ -107,15 +106,14 @@ export function idleReportData(data: ReportsDataPoint[]) {
         delete currentData.startTime;
         delete currentData.endTime;
         resultData.push(currentData);
-        currentData = {};
+        currentData = null;
       } else {
-        Object.keys(currentData).forEach((key) => delete currentData[key]);
-        currentData = {};
+        currentData = null;
       }
       return;
     }
 
-    if (item.timestamp - previousData.timestamp > 60 * 1000) {
+    if (item.timestamp - previousData.timestamp > 1000) {
       previousData = item;
       currentData.endTime = item.timestamp;
     }
@@ -132,17 +130,17 @@ export function playbackData(data: PlaybackDataPoint[]) {
 
   data.forEach((item: PlaybackDataPoint, index: number) => {
     if (!currentData) {
+      currentData = {};
       currentData.startTime = item.timestamp;
       currentData.playback = [[item.lat, item.lng]];
       previousData = item;
       return;
     }
-
     if (
       item.timestamp - previousData.timestamp > difference ||
       index === data.length - 1
     ) {
-      if (currentData.endDate && currentData.playback.length > 1) {
+      if (currentData.endTime) {
         currentData.duration = getTimeDifference(
           currentData.endTime - currentData.startTime
         );
@@ -152,20 +150,19 @@ export function playbackData(data: PlaybackDataPoint[]) {
         delete currentData.startTime;
         delete currentData.endTime;
         resultData.push(currentData);
-        currentData = {};
+        currentData = null;
       } else {
-        Object.keys(currentData).forEach((key) => delete currentData[key]);
-        currentData = {};
+        currentData = null;
       }
       return;
     }
 
-    if (item.timestamp - previousData.timestamp > 60 * 1000) {
+    if (item.timestamp - previousData.timestamp > 1000) {
       currentData.playback.push([item.lat, item.lng]);
       currentData.endTime = item.timestamp;
       previousData = item;
     }
   });
 
-  return [];
+  return resultData;
 }

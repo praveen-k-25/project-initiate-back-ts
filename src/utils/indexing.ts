@@ -11,5 +11,12 @@ export default async function ensureIndex(): Promise<void> {
 
   const dataIndexes = getCollection(dataCollection);
 
-  await Promise.all([dataIndexes.createIndex({ status: 1, timestamp: 1 })]);
+  await Promise.all([
+    dataIndexes.createIndex({ status: 1, timestamp: 1 }),
+    dataIndexes.createIndex({
+      user: 1,
+      timestamp: 1,
+      status: 1,
+    }),
+  ]);
 }

@@ -14,6 +14,7 @@ const userCollection = process.env.USER_COLLECTION;
 
 const reportData = async (req: Request, res: Response) => {
   const { user, startDate, endDate, status } = req.body;
+  console.log(req.body);
 
   const rawData = await getCollection<Reports>(dataCollection!)
     .find({
@@ -31,13 +32,14 @@ const reportData = async (req: Request, res: Response) => {
       timestamp: 1,
       speed: 1,
     })
-    .limit(10)
+    .sort({ timestamp: 1 })
     .toArray();
 
   const resultData = movingReportData(rawData);
   res.status(200).json({
     success: true,
     data: resultData,
+    rawData,
   });
 };
 
@@ -48,8 +50,8 @@ const playbackReport = async (req: Request, res: Response) => {
     .find({
       user: user,
       timestamp: {
-        $gte: new Date(startDate).getTime(),
-        $lt: new Date(endDate).getTime(),
+        $gte: startDate,
+        $lt: endDate,
       },
       status: 1,
     })

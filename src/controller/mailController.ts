@@ -1,35 +1,26 @@
 import type { Request, Response } from "express";
 import { sendForgotPasswordOtp, sendOtpMail } from "../utils/mailers.js";
 import { getCollection } from "../database/collection.js";
+import { AppError, asyncHandler } from "../middleware/ErrorHandler.js";
 
 const otpStore = new Map();
 const forgotPasswordOtpStore = new Map();
 
-const sendRegisterOtp = async (req: Request, res: Response) => {
+const sendRegisterOtp = asyncHandler(async (req: Request, res: Response) => {
   const { email } = req.body;
   const user = await getCollection(process.env.USER_COLLECTION!).findOne({
     email,
   });
 
-  if (user) {
-    let error = new Error();
-    //error.status = 400;
-    error.cause = "email";
-    error.message = "User email already exists";
-    throw error;
-  }
+  if (user) throw new AppError("User email already exists", 400, "email");
 
   let otp = Math.floor(1000 + Math.random() * 9000);
   const isMailSent = await sendOtpMail(email, otp);
-  if (!isMailSent) {
-    let error = new Error();
-    //error.status = 500;
-    error.message = "OTP not sent";
-    throw error;
-  }
+  if (!isMailSent) throw new AppError("OTP not sent", 500, "otp");
+
   otpStore.set(email, { otp, expires: Date.now() + 5 * 60 * 1000 });
   return res.status(200).json({ success: true, message: "OTP sent" });
-};
+});
 
 const verifyRegisterOtp = async (data: any) => {
   const { email, otp } = data;
@@ -47,34 +38,24 @@ const verifyRegisterOtp = async (data: any) => {
   return true;
 };
 
-const forgotPasswordOtp = async (req: Request, res: Response) => {
+const forgotPasswordOtp = asyncHandler(async (req: Request, res: Response) => {
   const { email } = req.body;
   const user = await getCollection(process.env.USER_COLLECTION!).findOne({
     email,
   });
 
-  if (!user) {
-    let error = new Error();
-    //error.status = 400;
-    error.cause = "email";
-    error.message = "invalid email";
-    throw error;
-  }
+  if (!user) throw new AppError("invalid email", 400, "email");
 
   let otp = Math.floor(1000 + Math.random() * 9000);
   const isMailSent = await sendForgotPasswordOtp(email, otp);
-  if (!isMailSent) {
-    let error = new Error();
-    //error.status = 500;
-    error.message = "OTP not sent";
-    throw error;
-  }
+  if (!isMailSent) throw new AppError("OTP not sent", 500, "otp");
+
   forgotPasswordOtpStore.set(email, {
     otp,
     expires: Date.now() + 5 * 60 * 1000,
   });
   return res.status(200).json({ success: true, message: "OTP sent" });
-};
+});
 
 const verifyForgotPasswordOtp = async (data: any) => {
   const { email, otp } = data;

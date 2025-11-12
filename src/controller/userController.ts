@@ -4,24 +4,18 @@ import {
   verifyRegisterOtp,
 } from "./mailController.js";
 import { ObjectId } from "mongodb";
-import { asyncHandler } from "../middleware/ErrorHandler.js";
+import { AppError, asyncHandler } from "../middleware/ErrorHandler.js";
 import { hashPassword, VerifyPassword } from "../utils/Hashing.js";
 import { accessToken, refreshToken } from "../utils/TokenHandler.js";
 import { getCollection } from "../database/collection.js";
 import { UserData } from "../types/controllerTypes.js";
 
 // register user
-const registerUser = async (req: Request, res: Response) => {
+const registerUser = asyncHandler(async (req: Request, res: Response) => {
   const { username, email, password, otp } = req.body;
-  const verified = await verifyRegisterOtp({ email, otp });
 
-  if (!verified) {
-    let error = new Error();
-    //error.status = 400;
-    error.cause = "otp";
-    error.message = "Invalid OTP";
-    throw error;
-  }
+  const verified = await verifyRegisterOtp({ email, otp });
+  if (!verified) throw new AppError("Invalid OTP", 400, "otp");
 
   const hashedPassword = await hashPassword(password);
   await getCollection(process.env.USER_COLLECTION!).insertOne({
@@ -62,7 +56,7 @@ const registerUser = async (req: Request, res: Response) => {
   }
 
   res.status(200).json({ success: true, message: "User registered" });
-};
+});
 
 // login user
 
@@ -71,22 +65,11 @@ const loginUser = asyncHandler(async (req: Request, res: Response) => {
   let user = await getCollection(process.env.USER_COLLECTION!).findOne({
     email,
   });
-  if (!user) {
-    let error = new Error();
-    //error.status = 400;
-    error.cause = "email";
-    error.message = "User not found";
-    throw error;
-  }
+
+  if (!user) throw new AppError("User not found", 400, "email");
 
   const isMatch = await VerifyPassword(user.password, password);
-  if (!isMatch) {
-    let error = new Error();
-    //error.status = 400;
-    error.cause = "password";
-    error.message = "Invalid Password";
-    throw error;
-  }
+  if (!isMatch) throw new AppError("Invalid Password", 400, "password");
 
   if (!user.vehicles) {
     user = await getCollection(process.env.USER_COLLECTION!).findOneAndUpdate(
@@ -129,17 +112,11 @@ const loginUser = asyncHandler(async (req: Request, res: Response) => {
 
 // forgot password
 
-const forgotPassword = async (req: Request, res: Response) => {
+const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
   const { email, newPassword, otp } = req.body;
-  const verify = await verifyForgotPasswordOtp({ email, otp });
 
-  if (!verify) {
-    let error = new Error();
-    //error.status = 400;
-    error.cause = "otp";
-    error.message = "Invalid OTP";
-    throw error;
-  }
+  const verify = await verifyForgotPasswordOtp({ email, otp });
+  if (!verify) throw new AppError("Invalid OTP", 400, "otp");
 
   const hashedPassword = await hashPassword(newPassword);
   await getCollection(process.env.USER_COLLECTION!).updateOne(
@@ -147,6 +124,6 @@ const forgotPassword = async (req: Request, res: Response) => {
     { $set: { password: hashedPassword } }
   );
   res.status(200).json({ success: true, message: "Password changed" });
-};
+});
 
 export { registerUser, loginUser, forgotPassword };
