@@ -34,13 +34,13 @@ const registerUser = asyncHandler(async (req: Request, res: Response) => {
 
   if (
     !masterID?.vehicles?.some(
-      (id: number) => id.toString() === user?._id.toString()
+      (vehicle: any) => vehicle.id.toString() === user?._id.toString()
     )
   ) {
     let userCollection = getCollection<UserData>(process.env.USER_COLLECTION!);
     await userCollection.updateOne(
       { _id: masterID?._id },
-      { $push: { vehicles: user?._id } }
+      { $push: { vehicles: { id: user?._id!, username: user?.username } } }
     );
   }
 
@@ -51,7 +51,7 @@ const registerUser = asyncHandler(async (req: Request, res: Response) => {
   ) {
     await getCollection<UserData>(process.env.USER_COLLECTION!).updateOne(
       { _id: user?._id },
-      { $push: { vehicles: user?._id } }
+      { $push: { vehicles: { id: user?._id!, username: user?.username } } }
     );
   }
 
@@ -76,7 +76,12 @@ const loginUser = asyncHandler(async (req: Request, res: Response) => {
       { _id: new ObjectId(user._id) },
       {
         $set: {
-          vehicles: [user._id],
+          vehicles: [
+            {
+              id: user._id,
+              username: user.username,
+            },
+          ],
         },
       },
       {

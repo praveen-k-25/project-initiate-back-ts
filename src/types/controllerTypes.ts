@@ -5,7 +5,10 @@ export interface UserData {
   username: string;
   email: string;
   password: string;
-  vehicles: ObjectId[];
+  vehicles: {
+    id: ObjectId;
+    username: string;
+  }[];
 }
 
 export interface Reports extends MongoDocument {

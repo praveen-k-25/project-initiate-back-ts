@@ -70,20 +70,30 @@ const dashboardVehicles = async (req: Request, res: Response) => {
 
   const vehicleList = await getCollection<UserData>(userCollection!).findOne(
     { _id: new ObjectId(user) },
-    { projection: { vehicles: 1 } }
+    { projection: { vehicles: 1, _id: 0 } } // include vehicles only, exclude _id if not needed
   );
-
   let result = [];
 
   if (vehicleList?.vehicles) {
     for (let vehicle of vehicleList?.vehicles) {
       let data = await getCollection(dataCollection!).findOne(
         {
-          user: vehicle.toString(),
+          user: vehicle.id.toString(),
         },
-        { sort: { timestamp: -1 } }
+        {
+          sort: { timestamp: -1 },
+          projection: {
+            time: 1,
+            user: 1,
+            lat: 1,
+            lng: 1,
+            status: 1,
+            speed: 1,
+          },
+        }
       );
-      data && result.push(data);
+
+      data && result.push({ ...data, username: vehicle.username });
     }
   }
 
