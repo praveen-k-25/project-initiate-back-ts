@@ -54,6 +54,18 @@ const registerUser = asyncHandler(async (req: Request, res: Response) => {
       { $push: { vehicles: { id: user?._id!, username: user?.username } } }
     );
   }
+  const date = new Date();
+  await getCollection(process.env.DATA_COLLECTION!).insertOne({
+    user: user?._id.toString(),
+    time: `${date.getFullYear()}-${
+      date.getMonth() + 1
+    }-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`,
+    lat: 0,
+    lng: 0,
+    speed: 0,
+    status: 0,
+    username,
+  });
 
   res.status(200).json({ success: true, message: "User registered" });
 });
